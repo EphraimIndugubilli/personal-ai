@@ -3,26 +3,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-env_path = os.path.join(BASE_DIR, ".env")
+# Load local .env if it exists (for local development)
+load_dotenv()
 
-# 1. First attempt: Standard load
-load_dotenv(env_path)
-DATABASE_URL = os.getenv("postgresql://neondb_owner:npg_3pNPtdOVL9Ug@ep-little-unit-awp830u3.c-12.us-east-1.aws.neon.tech/neondb?sslmode=require")
+# Fetch the variable by its KEY name
+DATABASE_URL = os.getenv("postgresql://neondb_owner:npg_3pNPtdOVL9Ug@ep-little-unit-awp830u3-pooler.c-12.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require")
 
-# 2. Fallback: If standard fails due to hidden Windows encoding/BOM, parse manually
-if not DATABASE_URL and os.path.exists(env_path):
-    with open(env_path, "r", encoding="utf-8-sig") as f:  # 'utf-8-sig' strips hidden Windows BOMs automatically
-        for line in f:
-            if "=" in line and not line.strip().startswith("#"):
-                key, value = line.strip().split("=", 1)
-                if key.strip() == "DATABASE_URL":
-                    DATABASE_URL = value.strip().strip('"').strip("'")
-                    os.environ["DATABASE_URL"] = DATABASE_URL
-
-# 3. Final sanity check
+# Final sanity check
 if not DATABASE_URL:
-    raise ValueError("CRITICAL ERROR: DATABASE_URL is missing or empty in your .env file!")
+    raise ValueError("CRITICAL ERROR: DATABASE_URL is missing or empty in the environment!")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
