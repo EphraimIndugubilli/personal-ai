@@ -15,7 +15,7 @@ client = genai.Client()
 app = FastAPI()
 
 # Command SQLAlchemy to create the tables in Neon if they don't exist yet
-models.Base.metadata.create_all(bind=engine)
+# models.Base.metadata.create_all(bind=engine)
 
 class UserPrompt(BaseModel):
     message: str
