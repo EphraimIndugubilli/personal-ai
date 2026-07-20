@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Fetch the variable by its KEY name
-DATABASE_URL = os.getenv("postgresql://neondb_owner:npg_3pNPtdOVL9Ug@ep-little-unit-awp830u3-pooler.c-12.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require")
+DATABASE_URL = os.getenv("postgresql://neondb_owner:npg_p5QSzYd2wDtE@ep-autumn-sunset-avd8vs2h-pooler.c-11.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require")
 
 # Final sanity check
 if not DATABASE_URL:
