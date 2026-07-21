@@ -20,6 +20,10 @@ app = FastAPI()
 class UserPrompt(BaseModel):
     message: str
 
+# 1. New schema for incoming memory requests
+class MemoryRequest(BaseModel):
+    text: str
+
 @app.get("/")
 def read_root():
     return {"message": "Hello Architect. The AI server is online."}
@@ -34,7 +38,24 @@ def background_analytics_logger(user_text: str, ai_text: str):
     word_count = len(user_text.split()) + len(ai_text.split())
     print(f"[BACKGROUND TASK COMPLETE] Conversation logged. Total words exchanged: {word_count}\n")
 
+# 2. New Endpoint: The Memory Bank
+@app.post("/remember/")
+def store_memory(request: MemoryRequest, db: Session = Depends(get_db)):
+    # Create a new memory object (Ensure models.Memory exists in your models.py!)
+    new_memory = models.Memory(content=request.text)
     
+    # Save it to the Neon database
+    db.add(new_memory)
+    db.commit()
+    db.refresh(new_memory)
+    
+    return {
+        "status": "Success",
+        "message": "The Architect has logged this to long-term memory.",
+        "memory_id": new_memory.id,
+        "content": new_memory.content
+    }
+
 # Notice the new parameter: db: Session = Depends(get_db)
 @app.post("/chat")
 def chat_with_ai(prompt: UserPrompt, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
@@ -49,7 +70,7 @@ def chat_with_ai(prompt: UserPrompt, background_tasks: BackgroundTasks, db: Sess
             history.append({"role": role, "parts": [{"text": msg.content}]})
             
         # 3. HYDRATE
-        chat = client.chats.create(model='gemini-3.5-flash', history=history)
+        chat = client.chats.create(model='gemini-1.5-flash', history=history)
         
         # 4. EXECUTE (WITH RETRIES)
         max_retries = 3
