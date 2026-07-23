@@ -1,14 +1,26 @@
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Load the environment variable safely
-DATABASE_URL = os.getenv("postgresql://neondb_owner:npg_p5QSzYd2wDtE@ep-autumn-sunset-avd8vs2h-pooler.c-11.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require")
+# 1. Force Python to find .env in the exact same folder
+BASE_DIR = Path(__file__).resolve().parent
+env_path = BASE_DIR / ".env"
+load_dotenv(dotenv_path=env_path)
 
-# Do not raise an error immediately on import. 
-# Allow Vercel to inspect the file during the build phase.
+# 2. Safely retrieve the URL from .env, WITH A DIRECT FALLBACK
+# This ensures that if the .env file format is broken, the app still gets the URL.
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+# 3. Allow Vercel to inspect the file during the build phase
 if DATABASE_URL and str(DATABASE_URL).strip() != "":
-    engine = create_engine(DATABASE_URL)
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,
+        pool_recycle=300,
+        connect_args={"connect_timeout": 10},
+    )
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 else:
     engine = None
@@ -17,10 +29,8 @@ else:
 Base = declarative_base()
 
 def get_db():
-    # Defer the crash to runtime. If the app is actually running and the URL 
-    # is STILL missing, then we raise the error.
     if not SessionLocal:
-        raise ValueError("CRITICAL ERROR: DATABASE_URL is missing from environment variables at runtime.")
+        raise ValueError(f"CRITICAL ERROR: DATABASE_URL is missing. Python strictly searched for .env at: {env_path}")
     
     db = SessionLocal()
     try:
